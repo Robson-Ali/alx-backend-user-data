@@ -1,46 +1,42 @@
 #!/usr/bin/env python3
-"""Authentication module for the API.
 """
-import os
-import re
-from typing import List, TypeVar
+API authentication module
+"""
+
 from flask import request
+from typing import List, TypeVar
+from os import getenv
 
 
 class Auth:
-    """Authentication class.
-    """
+    """ Authentication """
+
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
-        """Checks if a path requires authentication.
-        """
-        if path is not None and excluded_paths is not None:
-            for exclusion_path in map(lambda x: x.strip(), excluded_paths):
-                pattern = ''
-                if exclusion_path[-1] == '*':
-                    pattern = '{}.*'.format(exclusion_path[0:-1])
-                elif exclusion_path[-1] == '/':
-                    pattern = '{}/*'.format(exclusion_path[0:-1])
-                else:
-                    pattern = '{}/*'.format(exclusion_path)
-                if re.match(pattern, path):
-                    return False
+        """ Checks if API routes require authentication """
+        if path is None or not excluded_paths:
+            return True
+        for i in excluded_paths:
+            if i.endswith('*') and path.startswith(i[:-1]):
+                return False
+            elif i in {path, path + '/'}:
+                return False
         return True
 
     def authorization_header(self, request=None) -> str:
-        """Gets the authorization header field from the request.
-        """
-        if request is not None:
-            return request.headers.get('Authorization', None)
-        return None
+        """ Checks if Authorization request header is present
+        & contains values """
+        if request is None or "Authorization" not in request.headers:
+            return None
+        else:
+            return request.headers.get('Authorization')
 
     def current_user(self, request=None) -> TypeVar('User'):
-        """Gets the current user from the request.
-        """
+        """ placeholder """
         return None
 
-    def session_cookie(self, request=None) -> str:
-        """Gets the value of the cookie named SESSION_NAME.
-        """
-        if request is not None:
-            cookie_name = os.getenv('SESSION_NAME')
-            return request.cookies.get(cookie_name)
+    def session_cookie(self, request=None):
+        """ Returns cookie value from a request """
+        if request is None:
+            return None
+
+        return request.cookies.get(getenv('SESSION_NAME'))
